@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const agencySchema = new mongoose.Schema({
+const userSchema = new mongoose.Schema({
   name: {
     type: String,
     required: true,
@@ -14,6 +14,7 @@ const agencySchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  role:{type: String, enum:['traveler','provider','guide']}
 }, { timestamps: true });
 
-module.exports = mongoose.model('Agency', agencySchema);
+module.exports = mongoose.model('User', userSchema);
