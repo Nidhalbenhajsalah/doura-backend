@@ -2,7 +2,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const Agency = require('../models/agency');
 const User = require('../models/user');
-const generateToken = require('../utils/generateToken');
+const {generateToken,generateRefreshToken} = require('../utils/generateToken');
 
 exports.agencyRegister = async (req, res) => {
   const { name,email, password } = req.body;
@@ -70,10 +70,40 @@ exports.login = async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
 
-    res.json({ token: generateToken(user) });
+    const accessToken = generateToken(user);
+    const refreshToken = generateRefreshToken(user);
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: true, // set to false in dev if needed
+      sameSite: 'Strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    }).json({accessToken});
+
+    // res.json({ token: generateToken(user) });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
+};
+
+exports.refreshToken = (req, res) => {
+  const refreshToken = req.cookies.refreshToken;
+  if (!refreshToken) return res.sendStatus(401); // Unauthorized
+
+  jwt.verify(refreshToken, process.env.REFRESH_SECRET, (err, user) => {
+    if (err) return res.sendStatus(403); // Forbidden (token invalid or expired)
+
+    const newAccessToken = generateAccessToken({ _id: user.id, role: user.role });
+    res.json({ accessToken: newAccessToken });
+  });
+};
+
+exports.logout = (req, res) => {
+  res.clearCookie('refreshToken', {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'Strict',
+  });
+  res.sendStatus(204); // No content
 };
 
 

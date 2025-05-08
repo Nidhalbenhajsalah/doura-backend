@@ -6,6 +6,7 @@ const authRoutes = require('./routes/auth');
 const providerRoutes = require('./routes/provider');
 const guideRoutes = require('./routes/guide');
 const connectDB = require('./config/db');
+const cookieParser = require('cookie-parser');
 
 dotenv.config();
 connectDB();
@@ -13,9 +14,9 @@ connectDB();
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(cors({ origin: 'http://localhost:4200', credentials: true }));
 app.use(express.json());
-
+app.use(cookieParser());
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/provider', providerRoutes);
