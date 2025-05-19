@@ -2,7 +2,9 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const Agency = require('../models/agency');
 const User = require('../models/user');
-const {generateToken,generateRefreshToken} = require('../utils/generateToken');
+const crypto = require('crypto');
+const {generateAccessToken,generateRefreshToken} = require('../utils/generateAccessToken');
+const sendEmail = require('../utils/sendEmail');
 
 exports.agencyRegister = async (req, res) => {
   const { name,email, password } = req.body;
@@ -54,7 +56,7 @@ exports.register = async (req, res) => {
     const user = new User({ name, email, password: hashedPassword, role });
     await user.save();
 
-    res.status(201).json({ token: generateToken(user) });
+    res.status(201).json({ token: generateAccessToken(user) });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -70,7 +72,7 @@ exports.login = async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
 
-    const accessToken = generateToken(user);
+    const accessToken = generateAccessToken(user);
     const refreshToken = generateRefreshToken(user);
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
@@ -79,7 +81,7 @@ exports.login = async (req, res) => {
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     }).json({accessToken});
 
-    // res.json({ token: generateToken(user) });
+    // res.json({ token: generateAccessToken(user) });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -104,6 +106,52 @@ exports.logout = (req, res) => {
     sameSite: 'Strict',
   });
   res.sendStatus(204); // No content
+};
+
+exports.forgotPassword = async (req, res) => {
+  const { email } = req.body;
+  try {
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: 'No user with that email' });
+
+    const token = crypto.randomBytes(32).toString('hex');
+    user.resetPasswordToken = token;
+    user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
+    await user.save();
+
+    const resetUrl = `http://localhost:4200/reset-password/${token}`;
+    const message = `<p>Click to reset your password: <a href="${resetUrl}">${resetUrl}</a></p>`;
+
+    await sendEmail(user.email, 'Reset Your Password', message);
+
+    res.json({ message: 'Reset password email sent' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+
+exports.resetPassword = async (req, res) => {
+  const { token } = req.params;
+  const { password } = req.body;
+
+  try {
+    const user = await User.findOne({
+      resetPasswordToken: token,
+      resetPasswordExpires: { $gt: Date.now() },
+    });
+
+    if (!user) return res.status(400).json({ message: 'Invalid or expired token' });
+
+    user.password = await bcrypt.hash(password, 10);
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+    await user.save();
+
+    res.json({ message: 'Password reset successful' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
 };
 
 

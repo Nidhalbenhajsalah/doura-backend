@@ -14,7 +14,9 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  role:{type: String, enum:['traveler','provider','guide']}
+  role:{type: String, enum:['traveler','provider','guide']},
+  resetPasswordToken: String,
+  resetPasswordExpires: Date
 }, { timestamps: true });
 
 module.exports = mongoose.model('User', userSchema);
