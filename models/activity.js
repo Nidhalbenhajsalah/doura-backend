@@ -1,37 +1,80 @@
 const mongoose = require('mongoose');
 
 const activitySchema = new mongoose.Schema({
-    name: {
+        organizer: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
+    },
+    title: {
         type: String,
         required: true
     },
-    description: {
+    category: {
         type: String,
-        required: true
-    },
-    date: {
-        type: Date,
         required: true
     },
     location: {
         type: String,
         required: true
     },
-    organizer: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
+    targetAudience:{
+        type: String,
+        enum: ['adults', 'children', 'both'],
+        required: true
+    },
+    participantsMin:{
+        type: Number,
+        required: true
+    },
+    participantsMax:{
+        type: Number,
+        required: true
+    },
+    activityDuration:{
+        type: Number,
+        required: true,
+    },
+    activityDurationUnit:{
+        type: String,
+         enum: ['minutes', 'days'],
+        required: true,
+    },
+    activityPricing:{
+        type: Number,
+        required: true,
+    },
+    activityPricingBase:{
+        type: String,
+        enum: ['perPerson', 'perReservation'],
+        required: true,
+    },
+    coverImage:{
+        type:String,
+        required: true
+    },
+    videoLink:{
+        type:String,
+        required: false
+    },
+    description:{
+        type:String,
         required: true
     },
     participants: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
     }],
-    createdAt: {
+    availableDates: [{
         type: Date,
-        default: Date.now
+        required: false
+    }],
+    date: {
+        type: Date,
+        required: false
     },
-    updatedAt: {
-        type: Date,
-        default: Date.now
-    }
-});
+},
+    { timestamps: true }
+);
+
+module.exports = mongoose.model('Activity', activitySchema);
