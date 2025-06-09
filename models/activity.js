@@ -69,6 +69,10 @@ const activitySchema = new mongoose.Schema({
         type: Date,
         required: false
     }],
+    status: {
+        type: Boolean,
+        default: false
+    },
     date: {
         type: Date,
         required: false

@@ -5,6 +5,7 @@ const cors = require('cors');
 const authRoutes = require('./routes/auth');
 const providerRoutes = require('./routes/provider');
 const guideRoutes = require('./routes/guide');
+const adminRoutes = require('./routes/admin');
 const connectDB = require('./config/db');
 const cookieParser = require('cookie-parser');
 const path = require('path');
@@ -22,6 +23,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api/auth', authRoutes);
 app.use('/api/provider', providerRoutes);
 app.use('/api/guide', guideRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Start server
 const PORT = process.env.PORT || 5000;

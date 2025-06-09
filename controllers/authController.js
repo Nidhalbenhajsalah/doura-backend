@@ -44,7 +44,7 @@ exports.agencyLogin = async (req, res) => {
 exports.register = async (req, res) => {
   const { name, email, password, role } = req.body;
 
-  if (!['traveler', 'provider', 'guide'].includes(role)) {
+  if (!['traveler', 'provider', 'guide','admin'].includes(role)) {
     return res.status(400).json({ message: 'Invalid role' });
   }
 
