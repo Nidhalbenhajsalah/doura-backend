@@ -168,3 +168,53 @@ exports.editActivity = async (req, res) => {
     res.status(500).json({ message: 'Internal server error' });
   }
 };
+
+
+exports.approveUser = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    if (user.status !== 'pending') {
+      return res.status(400).json({ message: 'User is not pending approval' });
+    }
+
+    user.status = 'approved';
+    await user.save();
+
+    // Optionally send approval email here
+
+    res.json({ message: 'User approved successfully', user });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+exports.rejectUser = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    if (user.status !== 'pending') {
+      return res.status(400).json({ message: 'User is not pending approval' });
+    }
+
+    user.status = 'suspended';
+    await user.save();
+
+    // Optionally send rejection email here
+
+    res.json({ message: 'User rejected', user });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+exports.getPendingUsers = async (req, res) => {
+  try {
+    const users = await User.find({ status: 'pending', role: { $in: ['provider', 'guide'] } });
+    res.json(users);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};

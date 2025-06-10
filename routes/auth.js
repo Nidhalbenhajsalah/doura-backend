@@ -1,10 +1,7 @@
 const express = require('express');
-const { agencyRegister, agencyLogin,register,login,refreshToken,logout,forgotPassword,resetPassword  } = require('../controllers/authController');
+const { register,login,refreshToken,logout,forgotPassword,resetPassword  } = require('../controllers/authController');
 
 const router = express.Router();
-
-// router.post('/register', agencyRegister);
-// router.post('/login', agencyLogin);
 
 router.post('/register', register);
 router.post('/login', login);
