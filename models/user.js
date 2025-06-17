@@ -14,7 +14,7 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  role:{type: String, enum:['traveler','provider','guide','admin']},
+  role:{type: String, enum:['customer','provider','guide','admin']},
   status: {
   type: String,
   enum: ['pending', 'approved', 'suspended'],

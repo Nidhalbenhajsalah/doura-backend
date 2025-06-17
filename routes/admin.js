@@ -12,7 +12,7 @@ router.get('/activities', protect, authorizeRoles('admin'), getAllActivities)
 router.get('/activity/:id',protect, authorizeRoles('admin'),getActivityById)
 router.put('/activity/:id', protect, authorizeRoles('admin'), upload.single('coverImage'), editActivity)
 router.get('/pending',protect,authorizeRoles('admin'), getPendingUsers);
-router.put('/approve/:id',protect,authorizeRoles('admin'), approveUser);
-router.put('/reject/:id',protect,authorizeRoles('admin'), rejectUser);
+router.put('/approve-provider/:id',protect,authorizeRoles('admin'), approveUser);
+router.put('/reject-provider/:id',protect,authorizeRoles('admin'), rejectUser);
 
 module.exports = router;

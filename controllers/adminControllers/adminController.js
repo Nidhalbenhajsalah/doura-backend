@@ -28,17 +28,57 @@ exports.getAllActivities = async (req, res) => {
 };
 
 //get all activity organizers
+// exports.getAllActivityProviders = async (req, res) => {
+//   try {
+//     // Fetch all users with the role 'organizer' in the database
+//     const organizers = await User.find({ role: 'provider' });
+
+//     res.status(200).json(organizers);
+//   } catch (err) {
+//     console.error('Error fetching organizers:', err);
+//     res.status(500).json({ message: 'Internal server error' });
+//   }
+// };
+
 exports.getAllActivityProviders = async (req, res) => {
   try {
-    // Fetch all users with the role 'organizer' in the database
-    const organizers = await User.find({ role: 'provider' });
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const search = req.query.search || '';
+    const status = req.query.status; // optional: pending, approved, suspended
+    const skip = (page - 1) * limit;
 
-    res.status(200).json(organizers);
+    // Build dynamic query
+    const query = { role: 'provider' };
+
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    if (status) {
+      query.status = status;
+    }
+
+    const [providers, total] = await Promise.all([
+      User.find(query).skip(skip).limit(limit),
+      User.countDocuments(query)
+    ]);
+
+    res.status(200).json({
+      data: providers,
+      page,
+      totalPages: Math.ceil(total / limit),
+      total
+    });
   } catch (err) {
-    console.error('Error fetching organizers:', err);
+    console.error('Error fetching providers:', err);
     res.status(500).json({ message: 'Internal server error' });
   }
 };
+
 
 exports.createActivityAsAdmin = async (req, res) => {
   try {
@@ -175,9 +215,9 @@ exports.approveUser = async (req, res) => {
     const user = await User.findById(req.params.id);
     if (!user) return res.status(404).json({ message: 'User not found' });
 
-    if (user.status !== 'pending') {
-      return res.status(400).json({ message: 'User is not pending approval' });
-    }
+    // if (user.status !== 'pending') {
+    //   return res.status(400).json({ message: 'User is not pending approval' });
+    // }
 
     user.status = 'approved';
     await user.save();
@@ -195,9 +235,9 @@ exports.rejectUser = async (req, res) => {
     const user = await User.findById(req.params.id);
     if (!user) return res.status(404).json({ message: 'User not found' });
 
-    if (user.status !== 'pending') {
-      return res.status(400).json({ message: 'User is not pending approval' });
-    }
+    // if (user.status !== 'pending') {
+    //   return res.status(400).json({ message: 'User is not pending approval' });
+    // }
 
     user.status = 'suspended';
     await user.save();
