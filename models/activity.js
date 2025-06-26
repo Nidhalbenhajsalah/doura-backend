@@ -12,6 +12,7 @@ const activitySchema = new mongoose.Schema({
     },
     category: {
         type: String,
+        enum: ['sports', 'art', 'culture', 'culinary', 'science'],
         required: true
     },
     location: {
