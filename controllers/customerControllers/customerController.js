@@ -1,5 +1,5 @@
 const Activity = require('../../models/activity');
-
+const User= require('../../models/user');
 // get all activities
 exports.getAllActivities = async (req, res) => {
   try {
@@ -61,13 +61,38 @@ const { category, audience,date } = req.query;
 // get activity by id
 exports.getActivityById = async (req, res) => {
   try {
-    const activity = await Activity.findById(req.params.id);
+    const activity = await Activity.findById(req.params.id).populate({
+      path: 'organizer',
+      select: 'email instagram facebook whatsapp tiktok'
+    });
     if (!activity) {
       return res.status(404).json({ message: 'Activity not found' });
     }
     res.status(200).json(activity);
   } catch (err) {
     console.error('Error fetching activity:', err);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+// get organizer contact
+exports.getOrganizerContact = async (req, res) => {
+  try {
+    const provider = await User.findById(req.params.id);
+    if (!provider) {
+      return res.status(404).json({ message: 'Provider not found' });
+    }
+    res.status(200).json({ 
+      contact: {
+      instagram:provider.instagram,
+      facebook:provider.facebook,
+      whatsapp:provider.whatsapp,
+      email:provider.email,
+      phone:provider.phone
+
+    } });
+  } catch (err) {
+    console.error('Error fetching organizer contact:', err);
     res.status(500).json({ message: 'Internal server error' });
   }
 };
