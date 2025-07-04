@@ -147,3 +147,75 @@ exports.editActivity = async (req, res) => {
     res.status(500).json({ message: 'Internal server error' });
   }
 };
+
+exports.editProfileInfos = async (req, res) => {
+    try {
+        const providerId = req.params.providerId;
+        const updates = req.body;
+
+        // 1. Validate provider exists
+        const existingProvider = await User.findById(providerId);
+        if (!existingProvider) {
+            return res.status(404).json({ 
+                success: false,
+                message: 'Provider not found' 
+            });
+        }
+
+        // 2. Define allowed updatable fields
+        const allowedUpdates = ['name','mobile','location', 'instagram', 'facebook', 'tiktok', 'whatsapp'];
+        const isValidOperation = Object.keys(updates).every(update => 
+            allowedUpdates.includes(update)
+        );
+
+        if (!isValidOperation) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid updates! Only name and social media fields can be updated'
+            });
+        }
+
+        // 3. Apply updates
+        Object.keys(updates).forEach(update => {
+            existingProvider[update] = updates[update];
+        });
+
+        // 4. Save with validation
+        const updatedProvider = await existingProvider.save();
+
+        res.status(200).json({
+            success: true,
+            message: 'Profile updated successfully'
+        });
+
+    } catch (err) {
+        console.error('Error updating provider profile:', err);
+        
+        // Handle validation errors
+        if (err.name === 'ValidationError') {
+            const errors = Object.values(err.errors).map(el => el.message);
+            return res.status(400).json({ 
+                success: false,
+                message: 'Validation error',
+                errors 
+            });
+        }
+        
+        // Handle duplicate key errors (e.g., if you had unique fields)
+        if (err.code === 11000) {
+            return res.status(400).json({
+                success: false,
+                message: 'Duplicate field value entered',
+                error: err.message
+            });
+        }
+        
+        // Generic server error
+        res.status(500).json({ 
+            success: false,
+            message: 'Internal server error',
+            error: err.message 
+        });
+    
+    }
+};

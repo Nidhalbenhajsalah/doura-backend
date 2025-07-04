@@ -8,13 +8,33 @@ exports.getAllActivities = async (req, res) => {
     const currentPage = !Number.isNaN(page) && page > 0 ? page : 1;
     const perPage = !Number.isNaN(limit) && limit > 0 ? limit : 2;
     const skip = (currentPage - 1) * perPage;
-const { category, audience } = req.query;
+const { category, audience,date } = req.query;
     const filter = {};
     if (category) {
       filter.category = category; // assuming category is stored as a string like 'sports', 'art', etc.
     }
     if(audience){
       filter.targetAudience=audience
+    }
+
+        if (date) {
+      // Convert the query date string to a Date object
+      const selectedDate = new Date(date);
+      
+      // Filter activities where availableDates includes the selected date
+      // We need to compare dates without time components
+      const startOfDay = new Date(selectedDate);
+      startOfDay.setHours(0, 0, 0, 0);
+      
+      const endOfDay = new Date(selectedDate);
+      endOfDay.setHours(23, 59, 59, 999);
+      
+      filter.availableDates = {
+        $elemMatch: {
+          $gte: startOfDay,
+          $lte: endOfDay
+        }
+      };
     }
     
     const [activities, total] = await Promise.all([
@@ -34,6 +54,20 @@ const { category, audience } = req.query;
     });
   } catch (err) {
     console.error('Error fetching activities:', err);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+// get activity by id
+exports.getActivityById = async (req, res) => {
+  try {
+    const activity = await Activity.findById(req.params.id);
+    if (!activity) {
+      return res.status(404).json({ message: 'Activity not found' });
+    }
+    res.status(200).json(activity);
+  } catch (err) {
+    console.error('Error fetching activity:', err);
     res.status(500).json({ message: 'Internal server error' });
   }
 };

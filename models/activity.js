@@ -38,7 +38,7 @@ const activitySchema = new mongoose.Schema({
     },
     activityDurationUnit:{
         type: String,
-         enum: ['minutes', 'days'],
+         enum: ['minutes','hours', 'days'],
         required: true,
     },
     activityPricing:{

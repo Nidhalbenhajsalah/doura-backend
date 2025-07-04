@@ -10,9 +10,27 @@ const userSchema = new mongoose.Schema({
     required: true,
     unique: true,
   },
+  mobile:{
+    type:String,
+  },
+  location:{
+    type:String
+  },
   password: {
     type: String,
     required: true,
+  },
+  instagram:{
+    type:String,
+  },
+  facebook:{
+    type:String
+  },
+  tiktok:{
+    type:String
+  },
+  whatsapp:{
+    type:String
   },
   role:{type: String, enum:['customer','provider','guide','admin']},
   status: {
@@ -20,6 +38,7 @@ const userSchema = new mongoose.Schema({
   enum: ['pending', 'approved', 'suspended'],
   default: 'approved' // For travelers, default to approved
 },
+
   resetPasswordToken: String,
   resetPasswordExpires: Date
 }, { timestamps: true });
