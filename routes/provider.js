@@ -10,5 +10,6 @@ router.post('/activities',protect, authorizeRoles('provider'),upload.single('cov
 router.get('/activities', protect, authorizeRoles('provider'), getAllActivities)
 router.get('/activity/:id',protect, authorizeRoles('provider'),getActivityById)
 router.put('/activity/:id', protect, authorizeRoles('provider'), upload.single('coverImage'), editActivity)
-router.patch('/profile-infos/:providerId',protect,authorizeRoles('provider'),editProfileInfos)
+// for provider and admin roles
+router.patch('/profile-infos/:providerId',protect,authorizeRoles('provider','admin'),editProfileInfos)
 module.exports = router;

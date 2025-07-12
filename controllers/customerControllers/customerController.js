@@ -9,7 +9,7 @@ exports.getAllActivities = async (req, res) => {
     const perPage = !Number.isNaN(limit) && limit > 0 ? limit : 2;
     const skip = (currentPage - 1) * perPage;
 const { category, audience,date } = req.query;
-    const filter = {};
+    const filter = {status: true};
     if (category) {
       filter.category = category; // assuming category is stored as a string like 'sports', 'art', etc.
     }
@@ -41,7 +41,7 @@ const { category, audience,date } = req.query;
       Activity.find(filter)
         .skip(skip)
         .limit(perPage)
-        .populate('organizer', 'name email')
+        // .populate('organizer', 'name email')
         .sort({ activityPricing: 1 }), // optional: latest first
       Activity.countDocuments(filter)
     ]);

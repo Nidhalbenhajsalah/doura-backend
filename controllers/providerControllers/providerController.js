@@ -185,13 +185,11 @@ exports.editProfileInfos = async (req, res) => {
 
         res.status(200).json({
             success: true,
-            message: 'Profile updated successfully'
+            message: 'profile.profile_infos_update_success'
         });
 
-    } catch (err) {
-        console.error('Error updating provider profile:', err);
-        
-        // Handle validation errors
+    } catch (err) {  
+      // Handle validation errors
         if (err.name === 'ValidationError') {
             const errors = Object.values(err.errors).map(el => el.message);
             return res.status(400).json({ 
@@ -213,7 +211,7 @@ exports.editProfileInfos = async (req, res) => {
         // Generic server error
         res.status(500).json({ 
             success: false,
-            message: 'Internal server error',
+            message: 'profile.internal server error',
             error: err.message 
         });
     
