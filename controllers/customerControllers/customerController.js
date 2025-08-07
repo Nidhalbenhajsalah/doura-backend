@@ -6,16 +6,22 @@ exports.getAllActivities = async (req, res) => {
     const page = parseInt(req.query.page) || 1; // Default to page 1
     const limit = parseInt(req.query.limit) || 2; // Default limit
     const currentPage = !Number.isNaN(page) && page > 0 ? page : 1;
-    const perPage = !Number.isNaN(limit) && limit > 0 ? limit : 2;
+    const perPage = !Number.isNaN(limit) && limit > 0 ? limit : 4;
     const skip = (currentPage - 1) * perPage;
-const { category, audience,date } = req.query;
+const { category, audience,date, activityPriceSort } = req.query;
     const filter = {status: true};
-    if (category) {
-      filter.category = category; // assuming category is stored as a string like 'sports', 'art', etc.
+    if (category && category !== 'all') {
+      filter.category = category; 
     }
-    if(audience){
-      filter.targetAudience=audience
-    }
+if (audience) {
+  if (audience === 'adults') {
+    filter.targetAudience = { $in: ['adults', 'both'] };
+  } else if (audience === 'children') {
+    filter.targetAudience = { $in: ['children', 'both'] };
+  } else if (audience === 'both') {
+    filter.targetAudience = 'both';
+  }
+}
 
         if (date) {
       // Convert the query date string to a Date object
@@ -36,13 +42,25 @@ const { category, audience,date } = req.query;
         }
       };
     }
+
+    let sortOption = {};
+    if (activityPriceSort === 'desc') {
+      sortOption.activityPricing = -1;
+    }
+    else if (activityPriceSort === 'asc') {
+      sortOption.activityPricing = 1; // For example, ascending order
+    }
+     else {
+      // Default sort (optional)
+      sortOption.createdAt = -1; // For example, newest first
+    }
     
     const [activities, total] = await Promise.all([
       Activity.find(filter)
         .skip(skip)
         .limit(perPage)
         // .populate('organizer', 'name email')
-        .sort({ activityPricing: 1 }), // optional: latest first
+        .sort(sortOption), 
       Activity.countDocuments(filter)
     ]);
 

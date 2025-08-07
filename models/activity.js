@@ -54,6 +54,11 @@ const activitySchema = new mongoose.Schema({
         type:String,
         required: true
     },
+      additionalImages: {
+    type: [String],
+    validate: [arrayLimit, '{PATH} exceeds the limit of 5'],
+    default: [],
+  },
     videoLink:{
         type:String,
         required: false
@@ -81,5 +86,7 @@ const activitySchema = new mongoose.Schema({
 },
     { timestamps: true }
 );
-
+function arrayLimit(val) {
+  return val.length <= 5;
+}
 module.exports = mongoose.model('Activity', activitySchema);

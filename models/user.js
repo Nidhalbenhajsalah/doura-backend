@@ -32,6 +32,9 @@ const userSchema = new mongoose.Schema({
   whatsapp:{
     type:String
   },
+  youtubeChanel:{
+    type:String
+  },
   role:{type: String, enum:['customer','provider','guide','admin']},
   status: {
   type: String,

@@ -41,6 +41,10 @@ exports.createActivity = async (req, res) => {
       ? req.body.availableDates.map(date => new Date(date))
       : [];
 
+    // Multer: single file for coverImage, multiple for additionalImages
+    const coverImage = req.files?.coverImage?.[0]?.filename || '';
+    const additionalImages = req.files?.additionalImages?.map(f => f.filename) || [];
+
     const newActivity = new Activity({
       organizer: organizer._id,
       title,
@@ -53,7 +57,11 @@ exports.createActivity = async (req, res) => {
       activityDurationUnit,
       activityPricing,
       activityPricingBase,
-      coverImage: req.file?.filename || '', // multer handles file
+      // coverImage: req.file?.filename || '', 
+      // coverImage,
+      // additionalImages,
+      coverImage: req.processedImages?.coverImage || '', // ✅ fixed
+      additionalImages: req.processedImages?.additionalImages || [], // ✅ if you added to schema
       videoLink: videoLink || null,
       description,
       availableDates,
@@ -96,55 +104,158 @@ exports.getActivityById = async (req, res) => {
 };
 
 // edit activity
+// exports.editActivity = async (req, res) => {
+//   try {
+//     const activityId = req.params.id;
+//     const updatedActivityData = req.body;
+
+//     // Check if the activity exists
+//     const existingActivity = await Activity.findById(activityId);
+//     if (!existingActivity) {
+//       return res.status(404).json({ message: 'Activity not found' });
+//     }
+
+//     // Optional: check if current user is the organizer
+//     if (existingActivity.organizer.toString() !== req.user.id) {
+//       return res.status(403).json({ message: 'Unauthorized' });
+//     }
+
+//     // Parse availableDates from strings to Date objects
+//     let availableDates = [];
+//     if (Array.isArray(updatedActivityData.availableDates)) {
+//       availableDates = updatedActivityData.availableDates.map(date => new Date(date));
+//     }
+
+//     // Handle new cover image if provided
+//     if (req.processedImages?.coverImage) {
+//       // Delete old cover image from disk
+//       if (existingActivity.coverImage) {
+//         const oldImagePath = path.join(__dirname, '../../uploads/activities', existingActivity.coverImage);
+//         fs.unlink(oldImagePath, (err) => {
+//           if (err) console.error('Error deleting old cover image:', err);
+//         });
+//       }
+
+//       updatedActivityData.coverImage = req.processedImages.coverImage;
+//     }
+
+//     // --- Handle Additional Images ---
+//     const clientSubmittedImages = updatedActivityData.additionalImages || [];
+//     const newlyUploadedImages = req.processedImages?.additionalImages || [];
+
+//     // Keep only strings (existing image names) from client form
+//     const retainedImages = clientSubmittedImages.filter(img => typeof img === 'string');
+
+//     // Determine removed images (present in DB but not in retained)
+//     const removedImages = existingActivity.additionalImages.filter(
+//       existing => !retainedImages.includes(existing)
+//     );
+
+//     // Delete removed images from disk
+//     removedImages.forEach(image => {
+//       const imagePath = path.join(__dirname, '../../uploads/activities', image);
+//       fs.unlink(imagePath, (err) => {
+//         if (err) console.error('Error deleting removed additional image:', err);
+//       });
+//     });
+
+//     // Final image list = retained (still selected by user) + newly uploaded
+//     updatedActivityData.additionalImages = [...retainedImages, ...newlyUploadedImages];
+
+//     // Perform update
+//     const updatedActivity = await Activity.findByIdAndUpdate(
+//       activityId,
+//       {
+//         ...updatedActivityData,
+//         availableDates, // Ensure availableDates are Date objects
+//       },
+//       { new: true }
+//     );
+
+//     res.status(200).json(updatedActivity);
+//   } catch (err) {
+//     console.error('Error updating activity:', err);
+//     res.status(500).json({ message: 'Internal server error' });
+//   }
+// };
+
 exports.editActivity = async (req, res) => {
   try {
     const activityId = req.params.id;
     const updatedActivityData = req.body;
 
-    // Check if the activity exists
+    // 1. Check if the activity exists
     const existingActivity = await Activity.findById(activityId);
     if (!existingActivity) {
       return res.status(404).json({ message: 'Activity not found' });
     }
 
-    // Optional: check if current user is the organizer
+    // 2. Optional: check if current user is the organizer
     if (existingActivity.organizer.toString() !== req.user.id) {
       return res.status(403).json({ message: 'Unauthorized' });
     }
 
-    // Parse availableDates
+    // 3. Parse availableDates from strings to Date objects
     let availableDates = [];
     if (Array.isArray(updatedActivityData.availableDates)) {
       availableDates = updatedActivityData.availableDates.map(date => new Date(date));
     }
 
-    // Handle coverImage if a new file is uploaded
-    if (req.file) {
-      // Optional: delete old image file
+    // 4. Handle cover image update
+    if (req.processedImages?.coverImage) {
+      // Delete the old image from disk
       if (existingActivity.coverImage) {
-        const oldImagePath = path.join(__dirname, '../../uploads/activities', existingActivity.coverImage);
-        fs.unlink(oldImagePath, (err) => {
+        const oldCoverImagePath = path.join(__dirname, '../../uploads/activities', existingActivity.coverImage);
+        fs.unlink(oldCoverImagePath, (err) => {
           if (err) console.error('Error deleting old cover image:', err);
         });
       }
-
-      updatedActivityData.coverImage = req.file.filename;
+      updatedActivityData.coverImage = req.processedImages.coverImage;
+    } else {
+      // If no new cover image uploaded, preserve existing
+      updatedActivityData.coverImage = existingActivity.coverImage;
     }
 
-    // Set updated fields
+    // 5. Handle additional images
+   const clientSubmittedImagesRaw = updatedActivityData.additionalImages || [];
+const clientSubmittedImages = clientSubmittedImagesRaw.map(img =>
+  typeof img === 'string' ? img.split('/').pop() : img
+);
+    const newlyUploadedImages = req.processedImages?.additionalImages || [];
+
+    // Retain only valid existing images from client
+    const retainedImages = clientSubmittedImages.filter(img => typeof img === 'string');
+
+    // Find removed images (present in DB but not retained)
+    const removedImages = existingActivity.additionalImages.filter(
+      existing => !retainedImages.includes(existing)
+    );
+
+    // Delete removed images from disk
+    removedImages.forEach(image => {
+      const imagePath = path.join(__dirname, '../../uploads/activities', image);
+      fs.unlink(imagePath, (err) => {
+        if (err) console.error('Error deleting removed additional image:', err);
+      });
+    });
+
+    // Final additionalImages list = retained + newly uploaded
+    updatedActivityData.additionalImages = [...retainedImages, ...newlyUploadedImages];
+
+    // 6. Perform update
     const updatedActivity = await Activity.findByIdAndUpdate(
       activityId,
       {
         ...updatedActivityData,
-        availableDates, // ensure dates are converted
+        availableDates, // ensure dates are Date objects
       },
       { new: true }
     );
 
-    res.status(200).json(updatedActivity);
+    return res.status(200).json(updatedActivity);
   } catch (err) {
     console.error('Error updating activity:', err);
-    res.status(500).json({ message: 'Internal server error' });
+    return res.status(500).json({ message: 'Internal server error' });
   }
 };
 
@@ -163,7 +274,7 @@ exports.editProfileInfos = async (req, res) => {
         }
 
         // 2. Define allowed updatable fields
-        const allowedUpdates = ['name','mobile','location', 'instagram', 'facebook', 'tiktok', 'whatsapp'];
+        const allowedUpdates = ['name','mobile','location', 'instagram', 'facebook', 'tiktok', 'whatsapp','youtubeChanel'];
         const isValidOperation = Object.keys(updates).every(update => 
             allowedUpdates.includes(update)
         );

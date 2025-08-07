@@ -4,17 +4,16 @@ const fs = require('fs');
 
 const uploadPath = 'uploads/activities/';
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    fs.mkdirSync(uploadPath, { recursive: true }); // ensure path exists
-    cb(null, uploadPath);
+const upload = multer({
+  storage: multer.memoryStorage(), // store files in memory as Buffer
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = ['image/jpeg', 'image/png'];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only JPG and PNG files are allowed'), false);
+    }
   },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
-  }
 });
-
-const upload = multer({ storage });
 
 module.exports = upload;
